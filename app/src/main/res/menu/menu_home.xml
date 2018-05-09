@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".app.view.activity.HomeActivity">
+    <group android:checkableBehavior="single" android:enabled="true">
+        <item
+            android:checked="true"
+            android:id="@+id/action_2_column"
+            android:orderInCategory="100"
+            android:title="@string/action_two_column"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_3_column"
+            android:orderInCategory="100"
+            android:title="@string/action_three_column"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_4_column"
+            android:orderInCategory="100"
+            android:title="@string/action_four_column"
+            app:showAsAction="never" />
+    </group>
+
+</menu>

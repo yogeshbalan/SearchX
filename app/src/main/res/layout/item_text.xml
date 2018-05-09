@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.AppCompatTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/text_single"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/margin_standard"
+    android:textColor="@color/secondary_text"
+    android:textAppearance="@style/TextAppearance.AppCompat.Menu"
+    android:background="@color/color_white"
+    android:foreground="@drawable/universal_foreground_ripple"
+    tools:text="suggestion" />

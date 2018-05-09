@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="viewmodel"
+            type="in.yogesh.searchx.app.viewmodel.HomeViewModel" />
+
+        <import type="android.view.View" />
+    </data>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:animateLayoutChanges="true"
+        android:orientation="vertical">
+
+        <android.support.design.widget.CoordinatorLayout
+            android:id="@+id/coordinator_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/load_more_progress_bar"
+            tools:context=".app.view.activity.HomeActivity">
+
+            <android.support.design.widget.AppBarLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fitsSystemWindows="true"
+                android:theme="@style/AppTheme.AppBarOverlay">
+
+                <android.support.v7.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="?attr/colorPrimary"
+                    app:elevation="@dimen/zero_dp"
+                    app:layout_scrollFlags="scroll|enterAlways|snap"
+                    app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <android.support.v7.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/colorPrimary"
+                        app:cardUseCompatPadding="false">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginBottom="@dimen/margin_small"
+                            android:layout_marginTop="@dimen/margin_small"
+                            android:animateLayoutChanges="true"
+                            android:orientation="horizontal">
+
+                            <RelativeLayout
+                                android:id="@+id/search_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:layout_marginEnd="@dimen/margin_small"
+                                android:layout_marginStart="@dimen/margin_small"
+                                android:layout_toStartOf="@+id/iv_search_done"
+                                android:animateLayoutChanges="true"
+                                android:background="@drawable/search_bar_bg"
+                                android:paddingBottom="@dimen/margin_small"
+                                android:paddingTop="@dimen/margin_small">
+
+                                <android.support.v7.widget.AppCompatImageView
+                                    android:id="@+id/iv_search"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_centerVertical="true"
+                                    android:layout_marginEnd="@dimen/margin_small"
+                                    android:layout_marginStart="@dimen/margin_small"
+                                    app:srcCompat="@drawable/ic_search_black_24dp"
+                                    app:tint="@color/grey" />
+
+                                <AutoCompleteTextView
+                                    android:id="@+id/et_search"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_toEndOf="@+id/iv_search"
+                                    android:layout_toStartOf="@+id/iv_cancel"
+                                    android:background="#00000000"
+                                    android:completionThreshold="0"
+                                    android:hint="@string/search_images"
+                                    android:textColor="@color/grey"
+                                    android:textColorHint="@color/grey"
+                                    app:setAdapter="@{viewmodel.stringArrayAdapter}"
+                                    app:setClearText="@{viewmodel.clearEditTextText}"
+                                    app:setOnItemClickListener="@{viewmodel.onItemClickListener}"
+                                    app:setSearchTextWatcher="@{viewmodel.textWatcher}"
+                                    app:showDropDown="@{viewmodel.showDropDown}" />
+
+                                <android.support.v7.widget.AppCompatImageView
+                                    android:id="@+id/iv_cancel"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_alignParentEnd="true"
+                                    android:layout_centerVertical="true"
+                                    android:layout_marginEnd="@dimen/margin_small"
+                                    android:layout_marginStart="@dimen/margin_small"
+                                    android:onClickListener="@{viewmodel.cancelButtonClickListener}"
+                                    android:visibility="gone"
+                                    app:srcCompat="@drawable/ic_cancel_black_24dp"
+                                    app:tint="@color/grey"
+                                    app:visibility="@{viewmodel.crossButtonVisibility}" />
+
+                            </RelativeLayout>
+
+                            <android.support.v7.widget.AppCompatImageButton
+                                android:id="@+id/iv_search_done"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:layout_marginEnd="@dimen/margin_small"
+                                android:background="@drawable/white_circular_bg"
+                                android:foreground="@drawable/universal_foreground_ripple"
+                                android:onClickListener="@{viewmodel.doneButtonClickListener}"
+                                android:padding="@dimen/margin_very_small"
+                                android:stateListAnimator="@animator/scale_animator"
+                                android:visibility="gone"
+                                app:srcCompat="@drawable/ic_done_black_18dp"
+                                app:tint="@color/grey"
+                                app:visibility="@{viewmodel.doneButtonVisibility}" />
+
+                        </RelativeLayout>
+
+
+                    </android.support.v7.widget.CardView>
+
+                </RelativeLayout>
+
+            </android.support.design.widget.AppBarLayout>
+
+            <FrameLayout
+                android:id="@+id/recyclerview_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recyclerview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never"
+                    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                    app:recyclerViewViewModel="@{viewmodel}" />
+
+                <LinearLayout
+                    android:id="@+id/empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_centerInParent="true"
+                    android:background="@color/color_white"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    app:visibility="@{viewmodel.error}">
+
+                    <android.support.v7.widget.AppCompatImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/margin_small"
+                        app:srcCompat="@drawable/ic_new_releases_black_48dp"
+                        app:tint="@color/colorPrimary" />
+
+                    <android.support.v7.widget.AppCompatTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/margin_small"
+                        android:gravity="center"
+                        android:text="@string/empty_message"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textColor="@color/secondary_text" />
+
+                </LinearLayout>
+
+                <ProgressBar
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:theme="@style/Widget.AppCompat.ProgressBar"
+                    android:visibility="gone"
+                    app:visibility="@{viewmodel.showProgress}" />
+
+            </FrameLayout>
+
+        </android.support.design.widget.CoordinatorLayout>
+
+        <ProgressBar
+            android:id="@+id/load_more_progress_bar"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="@dimen/margin_standard"
+            android:layout_marginTop="@dimen/margin_standard"
+            android:theme="@style/Widget.AppCompat.ProgressBar"
+            android:visibility="gone"
+            app:visibility="@{viewmodel.showLoadMoreProgress}" />
+
+        <FrameLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
+
+</layout>
