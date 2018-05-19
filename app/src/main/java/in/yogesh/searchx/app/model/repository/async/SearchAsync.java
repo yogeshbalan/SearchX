@@ -17,7 +17,7 @@ import java.util.List;
 
 import in.yogesh.searchx.app.SearchConstants;
 import in.yogesh.searchx.app.model.data.Image;
-import in.yogesh.searchx.app.model.repository.interfaces.AsyncDelegate;
+import in.yogesh.searchx.app.model.repository.interfaces.SearchResultAsyncDelegate;
 import in.yogesh.searchx.library.utility.Utils;
 
 /**
@@ -26,13 +26,13 @@ import in.yogesh.searchx.library.utility.Utils;
 public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
 
     private Customsearch.Builder customSearch;
-    private AsyncDelegate asyncDelegate;
+    private SearchResultAsyncDelegate searchResultAsyncDelegate;
     private long itemId;
     private String query;
     private List<Image> imageList;
 
-    public SearchAsync(AsyncDelegate asyncDelegate, long itemId, String query) {
-        this.asyncDelegate = asyncDelegate;
+    public SearchAsync(SearchResultAsyncDelegate searchResultAsyncDelegate, long itemId, String query) {
+        this.searchResultAsyncDelegate = searchResultAsyncDelegate;
         this.itemId = itemId;
         this.query = query;
         this.imageList = new ArrayList<>();
@@ -64,16 +64,16 @@ public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
                     }
                     return imageList;
                 } else {
-                    if (asyncDelegate != null) {
-                        asyncDelegate.onDataFetchFailed();
+                    if (searchResultAsyncDelegate != null) {
+                        searchResultAsyncDelegate.onDataFetchFailed();
                     }
                     return null;
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
-                if (asyncDelegate != null) {
-                    asyncDelegate.onDataFetchFailed();
+                if (searchResultAsyncDelegate != null) {
+                    searchResultAsyncDelegate.onDataFetchFailed();
                 }
             }
         }
@@ -83,6 +83,6 @@ public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
     @Override
     protected void onPostExecute(List<Image> images) {
         super.onPostExecute(images);
-        asyncDelegate.onDataFetchComplete(images);
+        searchResultAsyncDelegate.onDataFetchComplete(images);
     }
 }

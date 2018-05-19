@@ -4,7 +4,7 @@ import java.util.List;
 
 import in.yogesh.searchx.app.model.data.Image;
 
-public interface AsyncDelegate {
+public interface SearchResultAsyncDelegate {
     void onDataFetchComplete(List<Image> imageList);
 
     void onDataFetchFailed();

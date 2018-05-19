@@ -14,9 +14,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Yogesh Kumar on 7/5/18
@@ -175,6 +179,29 @@ public class Utils {
             return palette;
         }
         return null;
+    }
+
+    /**
+     * This methods is used to convert bitmap into byte array because we cannot store bitmap
+     * in room database
+     * @param bitmap
+     * @return
+     */
+    public static byte[] getBytArrayFromBitmap(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
+        //bitmap.recycle();
+        return byteArray;
+    }
+
+    /**
+     * This method is used to convert byte array into bitmap
+     * @param bitmapByteArray
+     * @return
+     */
+    public static Bitmap getBitmapFromByteArray(byte[] bitmapByteArray) {
+        return BitmapFactory.decodeByteArray(bitmapByteArray, 0, bitmapByteArray.length);
     }
 
 }

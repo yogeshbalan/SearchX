@@ -7,4 +7,6 @@ import in.yogesh.searchx.library.repository.Repository;
  */
 public interface SearchDataFetchListener extends Repository.OnDataFetched {
 
+    void onLocalQueryResultFetched();
+
 }

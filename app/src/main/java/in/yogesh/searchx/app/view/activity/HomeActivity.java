@@ -15,7 +15,8 @@ import android.view.View;
 import android.widget.TextView;
 
 import in.yogesh.searchx.R;
-import in.yogesh.searchx.app.model.database.SearchResultDbHelper;
+import in.yogesh.searchx.app.SearchXApp;
+import in.yogesh.searchx.app.model.database.SearchDataBase;
 import in.yogesh.searchx.app.viewmodel.HomeViewModel;
 import in.yogesh.searchx.app.viewmodel.interfaces.ViewInteractionListener;
 import in.yogesh.searchx.app.viewmodel.interfaces.ViewModelToActivityCommunicator;
@@ -32,15 +33,15 @@ public class HomeActivity extends ViewModelActivity<ActivityHomeBinding, HomeVie
     private HomeViewModel homeViewModel;
     private ActivityHomeBinding activityHomeBinding;
     private ViewModelToActivityCommunicator viewModelToActivityCommunicator;
+    private SearchDataBase searchDataBase;
     private int gridSpan = DEFAULT_SPAN;
-    private SearchResultDbHelper searchResultDbHelper;
 
     @NonNull
     @Override
     protected HomeViewModel createViewModel(Bundle savedInstanceState) {
         setViewModelToActivityCommunicator();
-        searchResultDbHelper = new SearchResultDbHelper(HomeActivity.this);
-        homeViewModel = new HomeViewModel(this, getViewModelToActivityCommunicator(), searchResultDbHelper);
+        searchDataBase = ((SearchXApp) this.getApplication()).getDatabase();
+        homeViewModel = new HomeViewModel(this, getViewModelToActivityCommunicator(), getSearchDataBase());
         return homeViewModel;
     }
 
@@ -111,6 +112,10 @@ public class HomeActivity extends ViewModelActivity<ActivityHomeBinding, HomeVie
     @Override
     public void showKeyboard() {
         Utils.showKeyboard(this);
+    }
+
+    public SearchDataBase getSearchDataBase() {
+        return searchDataBase;
     }
 
     public ViewModelToActivityCommunicator getViewModelToActivityCommunicator() {

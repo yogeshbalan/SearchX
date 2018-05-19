@@ -1,7 +1,7 @@
 package in.yogesh.searchx.app.model.repository;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,13 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 import in.yogesh.searchx.app.model.data.Image;
-import in.yogesh.searchx.app.model.data.ImageDbObject;
-import in.yogesh.searchx.app.model.database.SearchResultDbHelper;
-import in.yogesh.searchx.app.model.repository.async.SaveDataInDBAsync;
+import in.yogesh.searchx.app.model.data.ImageResult;
+import in.yogesh.searchx.app.model.database.SearchDataBase;
+import in.yogesh.searchx.app.model.repository.async.GetCachedResult;
 import in.yogesh.searchx.app.model.repository.async.SearchAsync;
-import in.yogesh.searchx.app.model.repository.interfaces.AsyncDelegate;
 import in.yogesh.searchx.app.model.repository.interfaces.LoadMoreListener;
+import in.yogesh.searchx.app.model.repository.interfaces.SearchCacheResultAsyncDelegate;
 import in.yogesh.searchx.app.model.repository.interfaces.SearchDataFetchListener;
+import in.yogesh.searchx.app.model.repository.interfaces.SearchResultAsyncDelegate;
 import in.yogesh.searchx.app.model.rvdata.ImageRvData;
 import in.yogesh.searchx.library.repository.Repository;
 import in.yogesh.searchx.library.utility.Utils;
@@ -23,29 +24,31 @@ import in.yogesh.searchx.library.utility.Utils;
 /**
  * @author Yogesh Kumar on 8/5/18
  */
-public class SearchRepository extends Repository implements AsyncDelegate {
+public class SearchRepository extends Repository implements SearchResultAsyncDelegate, SearchCacheResultAsyncDelegate {
 
     private SearchDataFetchListener searchDataFetchListener;
     private LoadMoreListener loadMoreListener;
-    private SearchResultDbHelper searchResultDbHelper;
     private List<Image> imageList;
     private List<ImageRvData> imageRvData;
+    private List<String> distinctQueryResultList;
     private SearchAsync searchAsync;
-    private SaveDataInDBAsync saveDataInDBAsync;
     private String url;
     private String query;
+    private SearchDataBase searchDataBase;
 
     private boolean loadMore;
     private long firstItemID = 1;
 
-    public SearchRepository(String url, SearchDataFetchListener searchDataFetchListener, LoadMoreListener loadMoreListener, SearchResultDbHelper searchResultDbHelper) {
+    public SearchRepository(String url, SearchDataFetchListener searchDataFetchListener,
+                            LoadMoreListener loadMoreListener, SearchDataBase searchDataBase) {
         super(url, searchDataFetchListener);
         this.url = url;
         this.searchDataFetchListener = searchDataFetchListener;
         this.loadMoreListener = loadMoreListener;
-        this.searchResultDbHelper = searchResultDbHelper;
+        this.searchDataBase = searchDataBase;
         imageList = new ArrayList<>();
         imageRvData = new ArrayList<>();
+        distinctQueryResultList = new ArrayList<>();
         setLoadMore(false);
     }
 
@@ -84,6 +87,21 @@ public class SearchRepository extends Repository implements AsyncDelegate {
             }
         }
 
+    }
+
+    @Override
+    public void onDataFetchFromCacheStarted() {
+        if (searchDataFetchListener != null) {
+            searchDataFetchListener.onDataFetchStarted();
+        }
+    }
+
+    @Override
+    public void onDataFetchFromCacheComplete(List<ImageRvData> imageRvData) {
+        if (searchDataFetchListener != null) {
+            setImageRvData(imageRvData);
+            searchDataFetchListener.onDataFetchedFromCache();
+        }
     }
 
     @Override
@@ -145,6 +163,13 @@ public class SearchRepository extends Repository implements AsyncDelegate {
         return null;
     }
 
+    public List<ImageRvData> getImageRvDataFromCache() {
+        if (!Utils.isNullOrEmpty(imageRvData)) {
+            return imageRvData;
+        }
+        return null;
+    }
+
     public void setImageRvData(List<ImageRvData> imageRvData) {
         this.imageRvData = imageRvData;
     }
@@ -167,27 +192,55 @@ public class SearchRepository extends Repository implements AsyncDelegate {
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     public List<String> getQuerySuggestionDataFromCache() {
-        List<String> querySuggestionList = searchResultDbHelper.getAllQueryFromDb();
-        return (!Utils.isNullOrEmpty(querySuggestionList)) ? querySuggestionList : new ArrayList<String>();
-    }
+        new AsyncTask<String, Void, List<String>>() {
 
-
-    private void addDataInDb() {
-        saveDataInDBAsync = new SaveDataInDBAsync(getImageList(), getQuery(), searchResultDbHelper);
-        saveDataInDBAsync.execute();
-    }
-
-    public List<ImageRvData> getDataFromCache(String query) {
-        List<ImageDbObject> imageDbObjectList = searchResultDbHelper.getImageDbObjectListFromDb(query);
-        if (!Utils.isNullOrEmpty(imageDbObjectList)) {
-            for (ImageDbObject imageDbObject : imageDbObjectList) {
-                if (imageDbObject.getImageBitmap() != null) {
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageDbObject.getImageBitmap(), 0, imageDbObject.getImageBitmap().length);
-                    imageRvData.add(new ImageRvData(bitmap, imageDbObjectList.indexOf(imageDbObject)));
-                }
+            @Override
+            protected List<String> doInBackground(String... strings) {
+                return searchDataBase.imageResultDao().getAllDistinctQueryFromDb();
             }
+
+            @Override
+            protected void onPostExecute(List<String> strings) {
+                super.onPostExecute(strings);
+                distinctQueryResultList = strings;
+                if (searchDataFetchListener != null) {
+                    searchDataFetchListener.onLocalQueryResultFetched();
+                }
+                return;
+            }
+        }.execute();
+        return distinctQueryResultList;
+    }
+
+    @SuppressLint("StaticFieldLeak")
+    private void addDataInDb() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                if (!Utils.isNullOrEmpty(getImageList()) && getQuery() != null  && searchDataBase.getDatabaseCreated().getValue() != null) {
+                    if (searchDataBase.getDatabaseCreated().getValue() != null) {
+                        searchDataBase.imageResultDao().insertAll(getImageListForSavingInDatabase());
+                    }
+                }
+                return null;
+            }
+        }.execute();
+
+    }
+
+    private ImageResult[] getImageListForSavingInDatabase() {
+        ImageResult[] imageResultArray = new ImageResult[imageList.size()];
+        for (Image image : imageList) {
+            ImageResult imageResult = new ImageResult(-1, getQuery(), Utils.getBytArrayFromBitmap(image.getBitmap()));
+            imageResultArray[imageList.indexOf(image)] = imageResult;
         }
-        return imageRvData;
+        return imageResultArray;
+    }
+
+    public void getDataFromCache(String query) {
+        GetCachedResult getCachedResult = new GetCachedResult(query, searchDataBase, this);
+        getCachedResult.execute(getQuery());
     }
 }

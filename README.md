@@ -2,6 +2,7 @@
 
 An Android project showcasing
 - MVVM architecture
+- Room Persistence Library 
 - Google custom search engine API integration
 - Shared Element Transition
 - Material Design

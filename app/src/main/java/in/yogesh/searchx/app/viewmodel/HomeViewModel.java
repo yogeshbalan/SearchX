@@ -19,7 +19,7 @@ import java.util.List;
 
 import in.yogesh.searchx.BR;
 import in.yogesh.searchx.R;
-import in.yogesh.searchx.app.model.database.SearchResultDbHelper;
+import in.yogesh.searchx.app.model.database.SearchDataBase;
 import in.yogesh.searchx.app.model.repository.SearchRepository;
 import in.yogesh.searchx.app.model.repository.interfaces.LoadMoreListener;
 import in.yogesh.searchx.app.model.repository.interfaces.SearchDataFetchListener;
@@ -29,6 +29,7 @@ import in.yogesh.searchx.app.view.adapter.SearchResultRvAdapter;
 import in.yogesh.searchx.app.viewmodel.interfaces.ViewInteractionListener;
 import in.yogesh.searchx.app.viewmodel.interfaces.ViewModelToActivityCommunicator;
 import in.yogesh.searchx.library.recyclerview.RecyclerViewViewModel;
+import in.yogesh.searchx.library.utility.Utils;
 
 /**
  * @author Yogesh Kumar on 8/5/18
@@ -40,8 +41,6 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
     private LoadMoreListener loadMoreListener;
     private ViewInteractionListener viewInteractionListener;
     private ViewModelToActivityCommunicator activityCommunicator;
-    private SearchResultDbHelper searchResultDbHelper;
-
     private SearchResultRvAdapter resultRvAdapter;
 
     private TextWatcher textWatcher;
@@ -62,14 +61,13 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
 
     public HomeViewModel(final ViewInteractionListener viewInteractionListener,
                          ViewModelToActivityCommunicator viewModelToActivityCommunicator,
-                         SearchResultDbHelper searchResultDbHelper) {
+                         SearchDataBase searchDataBase) {
 
         setSearchDataFetchListener();
         setLoadMoreListener();
         setViewInteractionListener(viewInteractionListener);
         setActivityCommunicator(viewModelToActivityCommunicator);
-        setSearchResultDbHelper(searchResultDbHelper);
-        setSearchRepository();
+        setSearchRepository(searchDataBase);
         setStringArrayAdapter(getAdapterDataFromRepository());
         setTextWatcher(getEditTextTextWatcher());
         setError(true);
@@ -94,7 +92,7 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
                 setShowLoadMoreProgress(false);
                 setShowProgress(false);
                 setError(true);
-                setShowDropDown(true);
+                //setShowDropDown(true);
 
                 if (getAdapter() != null) {
                     getAdapter().clearData();
@@ -104,16 +102,11 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
 
             }
         });
-        setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                List<ImageRvData> imageRvData = repository.getDataFromCache(((AppCompatTextView) view).getText().toString());
-                setShowProgress(false);
-                setError(false);
-                getAdapter().addDataList(imageRvData);
-                viewInteractionListener.hideKeyboard();
-                setLoadMoreAllowed(false);
-            }
+        setOnItemClickListener((parent, view, position, id) -> {
+            repository.getDataFromCache(((AppCompatTextView) view).getText().toString());
+            viewInteractionListener.hideKeyboard();
+            setLoadMoreAllowed(false);
+
         });
     }
 
@@ -143,17 +136,9 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
         this.viewInteractionListener = viewInteractionListener;
     }
 
-    private void setSearchRepository() {
+    private void setSearchRepository(SearchDataBase searchDataBase) {
         if (searchDataFetchListener != null)
-            this.repository = new SearchRepository("", getSearchDataFetchListener(), getLoadMoreListener(), getSearchResultDbHelper());
-    }
-
-    public SearchResultDbHelper getSearchResultDbHelper() {
-        return searchResultDbHelper;
-    }
-
-    private void setSearchResultDbHelper(SearchResultDbHelper searchResultDbHelper) {
-        this.searchResultDbHelper = searchResultDbHelper;
+            this.repository = new SearchRepository("", getSearchDataFetchListener(), getLoadMoreListener(), searchDataBase);
     }
 
     private SearchDataFetchListener getSearchDataFetchListener() {
@@ -176,7 +161,12 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
             public void loadMoreFinished(int startedFrom) {
                 setShowLoadMoreProgress(false);
                 setError(false);
-                getAdapter().addDataList(repository.getImageRvData());
+                if (!Utils.isNullOrEmpty(repository.getImageRvData())) {
+                    getAdapter().addDataList(repository.getImageRvData());
+                } else {
+                    setError(true);
+                }
+
 
             }
 
@@ -192,17 +182,34 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
         this.searchDataFetchListener = new SearchDataFetchListener() {
 
             @Override
+            public void onLocalQueryResultFetched() {
+                setStringArrayAdapter(getAdapterDataFromRepository());
+            }
+
+            @Override
             public void onDataFetchedFromNetwork() {
                 setShowProgress(false);
                 setError(false);
-                getAdapter().addDataList(repository.getImageRvData());
-                setStringArrayAdapter(getAdapterDataFromRepository());
-                setShowDropDown(false);
+                if (!Utils.isNullOrEmpty(repository.getImageRvData())) {
+                    getAdapter().addDataList(repository.getImageRvData());
+                    setStringArrayAdapter(getAdapterDataFromRepository());
+                    setShowDropDown(false);
+                } else {
+                    setError(true);
+                }
+
             }
 
             @Override
             public void onDataFetchedFromCache() {
-
+                setShowProgress(false);
+                setError(false);
+                if (!Utils.isNullOrEmpty(repository.getImageRvDataFromCache())) {
+                    getAdapter().addDataList(repository.getImageRvDataFromCache());
+                    setShowDropDown(false);
+                } else {
+                    setError(true);
+                }
             }
 
             @Override
