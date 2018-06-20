@@ -68,39 +68,31 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
         setViewInteractionListener(viewInteractionListener);
         setActivityCommunicator(viewModelToActivityCommunicator);
         setSearchRepository(searchDataBase);
-        setStringArrayAdapter(getAdapterDataFromRepository());
         setTextWatcher(getEditTextTextWatcher());
         setError(true);
         setShowLoadMoreProgress(false);
         setShowDropDown(false);
         setLoadMoreAllowed(true);
         setGridSpan(2);
-        setDoneButtonClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                populateRv();
-                setLoadMoreAllowed(true);
-                viewInteractionListener.hideKeyboard();
-            }
+        setDoneButtonClickListener(v -> {
+            populateRv();
+            setLoadMoreAllowed(true);
+            viewInteractionListener.hideKeyboard();
         });
-        setCancelButtonClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setClearEditTextText(true);
-                setCrossButtonVisibility(false);
-                setDoneButtonVisibility(false);
-                setShowLoadMoreProgress(false);
-                setShowProgress(false);
-                setError(true);
-                //setShowDropDown(true);
+        setCancelButtonClickListener(v -> {
+            setClearEditTextText(true);
+            setCrossButtonVisibility(false);
+            setDoneButtonVisibility(false);
+            setShowLoadMoreProgress(false);
+            setShowProgress(false);
+            setError(true);
 
-                if (getAdapter() != null) {
-                    getAdapter().clearData();
-                    repository.clearData();
-                }
-
-
+            if (getAdapter() != null) {
+                getAdapter().clearData();
+                repository.clearData();
             }
+
+
         });
         setOnItemClickListener((parent, view, position, id) -> {
             repository.getDataFromCache(((AppCompatTextView) view).getText().toString());
@@ -108,12 +100,17 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
             setLoadMoreAllowed(false);
 
         });
+        fetchQuerySuggestionDataFromCache();
     }
 
     private ArrayAdapter<String> getAdapterDataFromRepository() {
         return new ArrayAdapter<>(activityCommunicator.getContext(),
                 R.layout.item_text,
                 repository.getQuerySuggestionDataFromCache());
+    }
+
+    private void fetchQuerySuggestionDataFromCache() {
+        repository.getQuerySuggestionDataFromCache();
     }
 
     private void populateRv() {
@@ -192,7 +189,7 @@ public class HomeViewModel extends RecyclerViewViewModel<SearchResultRvAdapter> 
                 setError(false);
                 if (!Utils.isNullOrEmpty(repository.getImageRvData())) {
                     getAdapter().addDataList(repository.getImageRvData());
-                    setStringArrayAdapter(getAdapterDataFromRepository());
+                    fetchQuerySuggestionDataFromCache();
                     setShowDropDown(false);
                 } else {
                     setError(true);

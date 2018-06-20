@@ -13,17 +13,18 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import in.yogesh.searchx.app.AppExecutor;
-import in.yogesh.searchx.app.model.data.ImageResult;
+import in.yogesh.searchx.app.SearchConstants;
+import in.yogesh.searchx.app.model.data.ImageEntity;
 
 /**
  * @author Yogesh Kumar
  */
-@Database(entities = {ImageResult.class}, version = 1)
+@Database(entities = {ImageEntity.class}, version = 1)
 public abstract class SearchDataBase extends RoomDatabase {
 
-    public abstract ImageResultDao imageResultDao();
+    public abstract ImageEntityDao imageEntityDao();
 
-    private static final String DATABASE_NAME = "image-search-result-db";
+    private static final String DATABASE_NAME = SearchConstants.DATABASE_NAME;
     private static SearchDataBase instance;
 
     private final MutableLiveData<Boolean> mIsDatabaseCreated = new MutableLiveData<>();

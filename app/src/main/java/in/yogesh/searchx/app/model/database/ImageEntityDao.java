@@ -7,24 +7,24 @@ import android.arch.persistence.room.Query;
 
 import java.util.List;
 
-import in.yogesh.searchx.app.model.data.ImageResult;
+import in.yogesh.searchx.app.model.data.ImageEntity;
 
 /**
  * @author Yogesh Kumar
  */
 @Dao
-public interface ImageResultDao {
+public interface ImageEntityDao {
 
     @Insert
-    void insertAll(ImageResult... imageResults);
+    void insertAll(ImageEntity... imageEntities);
 
     @Delete
-    void delete(ImageResult imageResult);
+    void delete(ImageEntity imageEntity);
 
-    @Query("Select * from ImageResult Where `Query` in (:query)")
-    List<ImageResult> findImageResultByQuery(String query);
+    @Query("Select * from ImageEntity Where `Query` in (:query)")
+    List<ImageEntity> findImageResultByQuery(String query);
 
-    @Query("Select DISTINCT `Query` from ImageResult")
+    @Query("Select DISTINCT `Query` from ImageEntity")
     List<String> getAllDistinctQueryFromDb();
 
 }

@@ -92,12 +92,7 @@ public class SearchResultRvAdapter extends RecyclerViewAdapter<SearchRvData> {
     private ItemViewHolder getImageViewHolder(ViewGroup parent) {
         final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_image, parent, false);
         final ImageViewModel imageViewModel = new ImageViewModel();
-        imageViewModel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                itemInteractionListener.onImageClicked(imageViewModel.getBitmap(), itemView, imageViewModel.getData().getPosition());
-            }
-        });
+        imageViewModel.setOnClickListener(v -> itemInteractionListener.onImageClicked(imageViewModel.getBitmap(), itemView, imageViewModel.getData().getPosition()));
         ItemImageBinding itemImageBinding = ItemImageBinding.bind(itemView);
         itemImageBinding.setViewModel(imageViewModel);
         return new ItemViewHolder(itemView, itemImageBinding, imageViewModel);

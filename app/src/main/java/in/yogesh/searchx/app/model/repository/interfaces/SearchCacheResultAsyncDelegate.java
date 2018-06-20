@@ -11,7 +11,9 @@ public interface SearchCacheResultAsyncDelegate {
 
     void onDataFetchFromCacheStarted();
 
-    void onDataFetchFromCacheComplete(List<ImageRvData> imageRvData);
+    void onFetchImagesFromCacheComplete(List<ImageRvData> imageRvData);
+
+    void onFetchQueryListFromCacheComplete(List<String> queryList);
 
     void onDataFetchFailed();
 

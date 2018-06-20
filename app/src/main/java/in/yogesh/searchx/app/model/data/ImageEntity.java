@@ -10,7 +10,7 @@ import java.util.Date;
  * @author Yogesh Kumar
  */
 @Entity
-public class ImageResult {
+public class ImageEntity {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -48,12 +48,12 @@ public class ImageResult {
         this.image = image;
     }
 
-    public ImageResult(int id, String query, byte[] image) {
+    public ImageEntity(int id, String query, byte[] image) {
         this.query = query;
         this.image = image;
     }
 
-    public ImageResult() {
+    public ImageEntity() {
     }
 
 }

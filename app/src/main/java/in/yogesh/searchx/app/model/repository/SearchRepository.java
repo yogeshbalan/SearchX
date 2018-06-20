@@ -3,16 +3,20 @@ package in.yogesh.searchx.app.model.repository;
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 
+import com.bumptech.glide.util.Util;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import in.yogesh.searchx.app.model.data.Image;
-import in.yogesh.searchx.app.model.data.ImageResult;
+import in.yogesh.searchx.app.model.data.ImageEntity;
 import in.yogesh.searchx.app.model.database.SearchDataBase;
-import in.yogesh.searchx.app.model.repository.async.GetCachedResult;
+import in.yogesh.searchx.app.model.repository.async.AddDataAsync;
+import in.yogesh.searchx.app.model.repository.async.CacheAsync;
 import in.yogesh.searchx.app.model.repository.async.SearchAsync;
+import in.yogesh.searchx.app.model.repository.async.SuggestionListAsync;
 import in.yogesh.searchx.app.model.repository.interfaces.LoadMoreListener;
 import in.yogesh.searchx.app.model.repository.interfaces.SearchCacheResultAsyncDelegate;
 import in.yogesh.searchx.app.model.repository.interfaces.SearchDataFetchListener;
@@ -30,11 +34,11 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
     private LoadMoreListener loadMoreListener;
     private List<Image> imageList;
     private List<ImageRvData> imageRvData;
-    private List<String> distinctQueryResultList;
+    private List<String> distinctQueryList;
     private SearchAsync searchAsync;
+    private SearchDataBase searchDataBase;
     private String url;
     private String query;
-    private SearchDataBase searchDataBase;
 
     private boolean loadMore;
     private long firstItemID = 1;
@@ -48,7 +52,7 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
         this.searchDataBase = searchDataBase;
         imageList = new ArrayList<>();
         imageRvData = new ArrayList<>();
-        distinctQueryResultList = new ArrayList<>();
+        distinctQueryList = new ArrayList<>();
         setLoadMore(false);
     }
 
@@ -77,14 +81,14 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
         int start = (int) getFirstItemID();
         setImageList(imageList);
         if (isLoadMore()) {
-            if (loadMoreListener != null) {
+            if (loadMoreListener != null)
                 loadMoreListener.loadMoreFinished(start);
-            }
+
         } else {
-            if (searchDataFetchListener != null) {
+            if (searchDataFetchListener != null)
                 searchDataFetchListener.onDataFetchedFromNetwork();
                 addDataInDb();
-            }
+
         }
 
     }
@@ -97,10 +101,18 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
     }
 
     @Override
-    public void onDataFetchFromCacheComplete(List<ImageRvData> imageRvData) {
+    public void onFetchImagesFromCacheComplete(List<ImageRvData> imageRvData) {
         if (searchDataFetchListener != null) {
             setImageRvData(imageRvData);
             searchDataFetchListener.onDataFetchedFromCache();
+        }
+    }
+
+    @Override
+    public void onFetchQueryListFromCacheComplete(List<String> queryList) {
+        if (searchDataFetchListener != null) {
+            setDistinctQueryList(queryList);
+            searchDataFetchListener.onLocalQueryResultFetched();
         }
     }
 
@@ -151,6 +163,10 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
         this.imageList = imageList;
     }
 
+    public void setDistinctQueryList(List<String> distinctQueryList) {
+        this.distinctQueryList = distinctQueryList;
+    }
+
     public List<ImageRvData> getImageRvData() {
         if (!Utils.isNullOrEmpty(imageList)) {
             for (Image image : imageList) {
@@ -194,53 +210,38 @@ public class SearchRepository extends Repository implements SearchResultAsyncDel
 
     @SuppressLint("StaticFieldLeak")
     public List<String> getQuerySuggestionDataFromCache() {
-        new AsyncTask<String, Void, List<String>>() {
-
-            @Override
-            protected List<String> doInBackground(String... strings) {
-                return searchDataBase.imageResultDao().getAllDistinctQueryFromDb();
-            }
-
-            @Override
-            protected void onPostExecute(List<String> strings) {
-                super.onPostExecute(strings);
-                distinctQueryResultList = strings;
-                if (searchDataFetchListener != null) {
-                    searchDataFetchListener.onLocalQueryResultFetched();
-                }
-                return;
-            }
-        }.execute();
-        return distinctQueryResultList;
+        SuggestionListAsync listAsync = new SuggestionListAsync(searchDataBase, this);
+        listAsync.execute();
+        return distinctQueryList;
     }
 
     @SuppressLint("StaticFieldLeak")
     private void addDataInDb() {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                if (!Utils.isNullOrEmpty(getImageList()) && getQuery() != null  && searchDataBase.getDatabaseCreated().getValue() != null) {
-                    if (searchDataBase.getDatabaseCreated().getValue() != null) {
-                        searchDataBase.imageResultDao().insertAll(getImageListForSavingInDatabase());
-                    }
-                }
-                return null;
-            }
-        }.execute();
-
+        if (isDataValid()) {
+            AddDataAsync addDataAsync = new AddDataAsync(searchDataBase, getImageListForSavingInDatabase());
+            addDataAsync.execute();
+        }
     }
 
-    private ImageResult[] getImageListForSavingInDatabase() {
-        ImageResult[] imageResultArray = new ImageResult[imageList.size()];
+    private boolean isDataValid() {
+        return !Utils.isNullOrEmpty(getImageList()) && getQuery() != null  && searchDataBase.getDatabaseCreated().getValue() != null;
+    }
+
+    private ImageEntity[] getImageListForSavingInDatabase() {
+        ImageEntity[] imageEntityArray = new ImageEntity[imageList.size()];
         for (Image image : imageList) {
-            ImageResult imageResult = new ImageResult(-1, getQuery(), Utils.getBytArrayFromBitmap(image.getBitmap()));
-            imageResultArray[imageList.indexOf(image)] = imageResult;
+            addImageEntityToList(imageEntityArray, image);
         }
-        return imageResultArray;
+        return imageEntityArray;
+    }
+
+    private void addImageEntityToList(ImageEntity[] imageEntityArray, Image image) {
+        ImageEntity imageEntity = new ImageEntity(-1, getQuery(), Utils.getBytArrayFromBitmap(image.getBitmap()));
+        imageEntityArray[imageList.indexOf(image)] = imageEntity;
     }
 
     public void getDataFromCache(String query) {
-        GetCachedResult getCachedResult = new GetCachedResult(query, searchDataBase, this);
-        getCachedResult.execute(getQuery());
+        CacheAsync cacheAsync = new CacheAsync(query, searchDataBase, this);
+        cacheAsync.execute(getQuery());
     }
 }
