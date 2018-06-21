@@ -32,13 +32,11 @@ public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
     private SearchResultAsyncDelegate searchResultAsyncDelegate;
     private long itemId;
     private String query;
-    private List<Image> imageList;
 
     public SearchAsync(SearchResultAsyncDelegate searchResultAsyncDelegate, long itemId, String query) {
         this.searchResultAsyncDelegate = searchResultAsyncDelegate;
         this.itemId = itemId;
         this.query = query;
-        this.imageList = new ArrayList<>();
         this.customSearch = new Customsearch.Builder(new NetHttpTransport(), new JacksonFactory(), null);
         this.customSearch.setApplicationName(SearchConstants.APP_NAME);
     }
@@ -47,49 +45,49 @@ public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
     protected List<Image> doInBackground(String... strings) {
 
         if (!TextUtils.isEmpty(query)) {
-            try {
-                Customsearch.Cse.List list;
-                list = setupCSE();
+            return fetchImages();
+        } else {
+            return null;
+        }
+    }
 
-                Search results = list.execute();
+    private List<Image> fetchImages() {
+        try {
+            Search results = generateSearchEngine().execute();
 
-                if (results.getItems() != null) {
-                    curateImageList(results);
-                    return imageList;
-                } else {
-                    if (searchResultAsyncDelegate != null)
-                        searchResultAsyncDelegate.onDataFetchFailed();
-
-                    return null;
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                if (searchResultAsyncDelegate != null)
-                    searchResultAsyncDelegate.onDataFetchFailed();
-
+            if (results.getItems() != null) {
+                return curateImageList(results);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
-    private void curateImageList(Search results) throws MalformedURLException {
-        for (Result res : results.getItems()) {
-            if (res != null) {
-                addBitmapToImageList(res);
-            }
-        }
+    private void notifyFail() {
+        if (searchResultAsyncDelegate != null)
+            searchResultAsyncDelegate.onDataFetchFailed();
     }
 
-    private void addBitmapToImageList(Result res) throws MalformedURLException {
+    private List<Image> curateImageList(Search results) throws MalformedURLException {
+        List<Image> imageList = new ArrayList<>();
+        for (Result res : results.getItems()) {
+            if (res != null) {
+                imageList.add(convertToImage(res));
+            }
+        }
+        return imageList;
+    }
+
+    private Image convertToImage(Result res) throws MalformedURLException {
         Rect rect = new Rect();
         rect.contains(100, 100, 100, 100);
         Bitmap bitmap = Utils.decodeSampledBitmapFromResource(new URL(res.getImage().getThumbnailLink()), rect, 100, 100);
-        imageList.add(new Image(res.getTitle(), res.getImage().getThumbnailLink(), bitmap));
+        return new Image(res.getTitle(), res.getImage().getThumbnailLink(), bitmap);
     }
 
     @NonNull
-    private Customsearch.Cse.List setupCSE() throws IOException {
+    private Customsearch.Cse.List generateSearchEngine() throws IOException {
         Customsearch.Cse.List list = customSearch.build().cse().list(query);
         list.setKey(SearchConstants.CUSTOM_SEARCH_API_KEY);
         list.setCx(SearchConstants.CUSTOM_SEARCH_ENGINE_KEY);
@@ -101,6 +99,10 @@ public class SearchAsync extends AsyncTask<String, Void, List<Image>> {
     @Override
     protected void onPostExecute(List<Image> images) {
         super.onPostExecute(images);
-        searchResultAsyncDelegate.onDataFetchComplete(images);
+        if (Utils.isNullOrEmpty(images)) {
+            notifyFail();
+        } else {
+            searchResultAsyncDelegate.onDataFetchComplete(images);
+        }
     }
 }
